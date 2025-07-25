@@ -33,31 +33,36 @@ public class BuyProductUser {
 
 
     public void buyProduct(Long idUser, Long idProduct) {
-        if (this.productService.existsProduct(idProduct) && this.userService.existsUser(idUser)) {
-            Product product = this.productService.findById(idProduct);
-            User user = this.userService.getUser(idUser);
+        Product product = this.productService.findById(idProduct);
+        User user = this.userService.getUser(idUser);
+        if (product != null  && user != null) {
 
             if (product.getStock() > 0 && user.getBalance() >= product.getPrice()) {
-                user.setBalance(user.getBalance() - product.getPrice());
-                product.setStock(product.getStock() - 1);
-                user.getProducts().add(product);
-                product.getUsers().add(user);
-                this.userRepository.persist(user);
-                this.productRepository.persist(product);
-
-                this.productRepository.flush();
-                this.userRepository.flush();
-
-                UUID uuid = UUID.randomUUID();
-
-
-                this.producerMessage.sendMessage(new BuyProductRequest(product.getId(),
-                        user.getId(),uuid.toString(), user.getAddress()));
+                this.paymentProduct(user, product);
 
 
             }else{
                 throw new RuntimeException("Product in stock < 1 or user balancer: " + user.getBalance() + " < " + product.getPrice() );
             }
         }
+    }
+
+    private void paymentProduct(User user, Product product) {
+        user.setBalance(user.getBalance() - product.getPrice());
+        product.setStock(product.getStock() - 1);
+        user.getProducts().add(product);
+        product.getUsers().add(user);
+        this.userRepository.persist(user);
+        this.productRepository.persist(product);
+
+        this.productRepository.flush();
+        this.userRepository.flush();
+
+        UUID uuid = UUID.randomUUID();
+
+
+        this.producerMessage.sendMessage(new BuyProductRequest(product.getId(),
+                user.getId(),uuid.toString(), user.getAddress()));
+
     }
 }
