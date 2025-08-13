@@ -31,6 +31,18 @@ public class UserService {
         return this.userRepository.findById(id) != null;
     }
 
+    public void paymentUser(Long id, Double amount){
+        User  user = this.userRepository.findById(id);
+        if( user != null){
+            user.setBalance(user.getBalance()-amount);
+            this.userRepository.flush();
+
+        }else{
+            throw new RuntimeException("User not found");
+        }
+
+
+    }
 
 
 

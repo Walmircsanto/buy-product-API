@@ -1,7 +1,6 @@
 package org.delivery.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import org.delivery.dto.BuyProductRequest;
 import org.delivery.dto.mapper.Mapper;

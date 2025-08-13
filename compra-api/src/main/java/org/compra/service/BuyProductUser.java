@@ -3,66 +3,59 @@ package org.compra.service;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import org.compra.ProducerMessage;
-import org.compra.dto.BuyProductRequest;
+import org.compra.dto.VerifyPaymentRequest;
 import org.compra.model.Product;
+import org.compra.rabbitmq.PaymentProducerMessage;
 import org.compra.model.User;
-import org.compra.repository.ProductRepository;
-import org.compra.repository.UserRepository;
 
-import java.util.UUID;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @RequestScoped
 public class BuyProductUser {
 
     @Inject
-    private UserService userService;
+    UserService userService;
 
     @Inject
-    private ProductService productService;
+    PaymentProducerMessage paymentProducerMessage;
 
     @Inject
-    private ProducerMessage producerMessage;
+    ProductService productService;
 
 
-    @Inject
-    ProductRepository productRepository;
+    public void buyProduct(Long idUser, Long idProduct) throws UnsupportedEncodingException, NoSuchAlgorithmException {
 
-    @Inject
-    UserRepository userRepository;
-
-
-    public void buyProduct(Long idUser, Long idProduct) {
-        Product product = this.productService.findById(idProduct);
         User user = this.userService.getUser(idUser);
-        if (product != null  && user != null) {
+        Product product = this.productService.findById(idProduct);
 
-            if (product.getStock() > 0 && user.getBalance() >= product.getPrice()) {
-                this.paymentProduct(user, product);
-
-
-            }else{
-                throw new RuntimeException("Product in stock < 1 or user balancer: " + user.getBalance() + " < " + product.getPrice() );
-            }
+        if (user != null && product != null) {
+            this.verifyPayment(user.getNumberCard(), user.getHalfPayment(), user.getId(),
+                    product.getPrice(), product.getId());
         }
     }
 
-    private void paymentProduct(User user, Product product) {
-        user.setBalance(user.getBalance() - product.getPrice());
-        product.setStock(product.getStock() - 1);
-        user.getProducts().add(product);
-        product.getUsers().add(user);
-        this.userRepository.persist(user);
-        this.productRepository.persist(product);
+    private void verifyPayment(String numberCard, String halfPayment, Long idUser,
+                               Double productPrice, Long idProduct) throws UnsupportedEncodingException,
+            NoSuchAlgorithmException {
 
-        this.productRepository.flush();
-        this.userRepository.flush();
+        String paymentId = this.encryptPayment(numberCard,halfPayment, idUser,productPrice,idProduct);
+        VerifyPaymentRequest verifyPaymentRequest = new VerifyPaymentRequest(numberCard,
+                halfPayment, paymentId, idUser, productPrice, idProduct);
 
-        UUID uuid = UUID.randomUUID();
+        this.paymentProducerMessage.producerMessageToPayment(verifyPaymentRequest);
+    }
 
 
-        this.producerMessage.sendMessage(new BuyProductRequest(product.getId(),
-                user.getId(),uuid.toString(), user.getAddress()));
+    private String encryptPayment(String numberCard, String halfPayment, Long idUser,
+                                  Double productPrice, Long idProduct)
+            throws NoSuchAlgorithmException, UnsupportedEncodingException {
 
+        String hashPaymentId = numberCard + halfPayment + idUser + productPrice + idProduct;
+        MessageDigest algorithm = MessageDigest.getInstance("SHA-256");
+        byte messageDigest[] = algorithm.digest(hashPaymentId.getBytes("UTF-8"));
+
+        return new String(messageDigest, "UTF-8");
     }
 }

@@ -20,6 +20,9 @@ public class User {
 
     private String address;
 
+    private String numberCard;
+    private String halfPayment;
+
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Product> products = new ArrayList<>();
 
@@ -27,21 +30,19 @@ public class User {
 
     }
 
-
-    public User(Long id, String username, int age, String email,
-                Double balance, String address, List<Product> products) {
+    public User(Long id, String username, int age, String email, Double balance,
+                String address, String numberCard, String halfPayment,
+                List<Product> products) {
         this.id = id;
         this.username = username;
         this.age = age;
         this.email = email;
         this.balance = balance;
         this.address = address;
+        this.numberCard = numberCard;
+        this.halfPayment = halfPayment;
         this.products = products;
     }
-
-
-
-
 
     public Long getId() {
         return id;
@@ -97,5 +98,21 @@ public class User {
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+
+    public String getNumberCard() {
+        return numberCard;
+    }
+
+    public void setNumberCard(String numberCard) {
+        this.numberCard = numberCard;
+    }
+
+    public String getHalfPayment() {
+        return halfPayment;
+    }
+
+    public void setHalfPayment(String halfPayment) {
+        this.halfPayment = halfPayment;
     }
 }

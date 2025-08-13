@@ -8,6 +8,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.compra.service.BuyProductUser;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+
 @Path("/buy-product")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -21,7 +24,7 @@ public class BuyProductController {
     @POST
     @Transactional
     @Path("/{idUser}/{idProduct}")
-    public Response buyProduct(@PathParam("idUser") Long idUser, @PathParam("idProduct") Long  idProduct) {
+    public Response buyProduct(@PathParam("idUser") Long idUser, @PathParam("idProduct") Long  idProduct) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         this.buyProductUser.buyProduct(idUser, idProduct);
         return Response.ok().build();
 

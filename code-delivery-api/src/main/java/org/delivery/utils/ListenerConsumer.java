@@ -20,11 +20,8 @@ public class ListenerConsumer {
     @Transactional
     public void consumerBuyProduct(String json) {
         try {
-            BuyProductRequest request = objectMapper.readValue(json, BuyProductRequest.class);
-            this.buyProductService.save(request);
+            Log.info("Received json: " + json);
 
-            Log.info("Received message: User " + request.getIdUser() + " comprou o produto:  " + request.getIdProduct()
-                    + " do id " + request.getIdCompra() + "Endereço "+ request.getAddress());
         } catch (Exception e) {
             Log.error("Failed to deserialize message", e);
         }

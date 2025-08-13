@@ -1,7 +1,7 @@
 package org.compra.service;
 
-import org.compra.ProducerMessage;
-import org.compra.dto.BuyProductRequest;
+import org.compra.rabbitmq.PaymentProducerMessage;
+import org.compra.dto.VerifyPaymentRequest;
 import org.compra.model.Product;
 import org.compra.model.User;
 import org.compra.repository.ProductRepository;
@@ -10,8 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
-import java.util.HashSet;
-import java.util.List;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -28,7 +28,7 @@ class BuyProductUserTest {
     ProductService productService;
 
     @Mock
-    ProducerMessage producerMessage;
+    PaymentProducerMessage paymentProducerMessage;
 
     @Mock
     UserRepository userRepository;
@@ -57,7 +57,7 @@ class BuyProductUserTest {
     }
 
     @Test
-    void testBuyProduct_success() {
+    void testBuyProduct_success() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         when(userService.getUser(1L)).thenReturn(user);
         when(productService.findById(10L)).thenReturn(product);
 
@@ -68,11 +68,11 @@ class BuyProductUserTest {
         verify(productRepository).persist(product);
         verify(userRepository).flush();
         verify(productRepository).flush();
-        verify(producerMessage).sendMessage(any(BuyProductRequest.class));
+        verify(paymentProducerMessage).producerMessageToPayment(any(VerifyPaymentRequest.class));
     }
 
     @Test
-    void testBuyProduct_userNotFound() {
+    void testBuyProduct_userNotFound() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         when(userService.getUser(1L)).thenReturn(null);
         when(productService.findById(10L)).thenReturn(product);
 
@@ -83,7 +83,7 @@ class BuyProductUserTest {
     }
 
     @Test
-    void testBuyProduct_productNotFound() {
+    void testBuyProduct_productNotFound() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         when(userService.getUser(1L)).thenReturn(user);
         when(productService.findById(10L)).thenReturn(null);
 
@@ -104,7 +104,7 @@ class BuyProductUserTest {
         });
 
         verify(userRepository, never()).persist((User) any());
-        verify(producerMessage, never()).sendMessage(any());
+        verify(paymentProducerMessage, never()).producerMessageToPayment(any());
     }
 
     @Test
@@ -118,6 +118,6 @@ class BuyProductUserTest {
         });
 
         verify(userRepository, never()).persist((User) any());
-        verify(producerMessage, never()).sendMessage(any());
+        verify(paymentProducerMessage, never()).producerMessageToPayment(any());
     }
 }
